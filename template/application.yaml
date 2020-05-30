@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Application
+
+Parameters:
+  ServiceName:
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues: 
+      - prd
+      - dev
+      - stg
+  MasterUsername:
+    Type: String
+  MasterUserPassword:
+    Type: String
+    NoEcho: true
+
+Mappings:
+  Rds:
+    Properties:
+      DBInstanceClass: db.t2.micro
+
+Resources:
+  # rds
+  Rds:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: '30'
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      BackupRetentionPeriod: 7
+      CopyTagsToSnapshot: true
+      DBInstanceClass: !FindInMap [Rds, Properties, DBInstanceClass]
+      DBInstanceIdentifier: !Sub ${ServiceName}-${Environment}-postgres
+      DBName: !Sub ${ServiceName}_${Environment}
+      DBParameterGroupName: !Ref RdsParameterGroup
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      DeletionProtection: true
+      EnablePerformanceInsights: true
+      Engine: postgres
+      EngineVersion: '11.7'
+      MasterUsername: !Ref MasterUsername
+      MasterUserPassword: !Ref MasterUserPassword
+      MultiAZ: false
+      PerformanceInsightsRetentionPeriod: 7
+      PreferredBackupWindow: 15:00-15:30
+      PreferredMaintenanceWindow: sun:16:00-sun:16:30
+      StorageType: gp2
+      StorageEncrypted: false
+      VPCSecurityGroups:
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-RdsSecurityGroup
+
+  # subnet group
+  RdsSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub ${ServiceName}-${Environment}-subnet-group
+      DBSubnetGroupDescription: !Sub ${ServiceName}-${Environment}-subnet-group
+      SubnetIds:
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-PrivateSubnetA
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-PrivateSubnetC
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-PrivateSubnetD
+      Tags:
+      - Key: Name
+        Value: !Sub ${ServiceName}-${Environment}-subnet-group
+
+  # parameter group
+  RdsParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      Description: !Sub ${ServiceName}-${Environment}-param-group
+      Family: postgres11
+      Parameters: 
+        log_min_duration_statement: '5000'
+        log_statement: all
+        rds.log_retention_period: '10080'
+        timezone: Asia/Tokyo
+      Tags:
+      - Key: Name
+        Value: !Sub ${ServiceName}-${Environment}-param-group

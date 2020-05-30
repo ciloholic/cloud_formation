@@ -1,0 +1,252 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Network
+
+Parameters:
+  ServiceName:
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues: 
+      - prd
+      - dev
+      - stg
+
+Mappings:
+  Vpc:
+    Cidr:
+      Default: 10.0.0.0/16
+  Subnet:
+    AvailabilityZone:
+      A: ap-northeast-1a
+      C: ap-northeast-1c
+      D: ap-northeast-1d
+    Cidr:
+      PublicA: 10.0.1.0/24
+      PublicC: 10.0.2.0/24
+      PublicD: 10.0.3.0/24
+      PrivateA: 10.0.10.0/24
+      PrivateC: 10.0.20.0/24
+      PrivateD: 10.0.30.0/24
+
+Resources:
+  # vpc
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !FindInMap [Vpc, Cidr, Default]
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-vpc
+
+  # internet gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  # route table
+  PublicRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-public-route-table-a
+
+  PublicRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-public-route-table-c
+
+  PublicRouteTableD:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-public-route-table-d
+
+  PrivateRouteTableA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-private-route-table-a
+
+  PrivateRouteTableC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-private-route-table-c
+
+  PrivateRouteTableD:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-private-route-table-d
+
+  # route
+  PublicRouteA:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableA
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteC:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableC
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteD:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTableD
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # subnet
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [Subnet, Cidr, PublicA]
+      AvailabilityZone: !FindInMap [Subnet, AvailabilityZone, A]
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-public-subnet-a
+
+  PublicSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [Subnet, Cidr, PublicC]
+      AvailabilityZone: !FindInMap [Subnet, AvailabilityZone, C]
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-public-subnet-c
+
+  PublicSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [Subnet, Cidr, PublicD]
+      AvailabilityZone: !FindInMap [Subnet, AvailabilityZone, D]
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-public-subnet-d
+
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [Subnet, Cidr, PrivateA]
+      AvailabilityZone: !FindInMap [Subnet, AvailabilityZone, A]
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-private-subnet-a
+
+  PrivateSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [Subnet, Cidr, PrivateC]
+      AvailabilityZone: !FindInMap [Subnet, AvailabilityZone, C]
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-private-subnet-c
+
+  PrivateSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !FindInMap [Subnet, Cidr, PrivateD]
+      AvailabilityZone: !FindInMap [Subnet, AvailabilityZone, D]
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-private-subnet-d
+
+  # route table association
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTableA
+
+  PublicSubnetCRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetC
+      RouteTableId: !Ref PublicRouteTableC
+
+  PublicSubnetDRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetD
+      RouteTableId: !Ref PublicRouteTableD
+
+  PrivateSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTableA
+
+  PrivateSubnetCRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetC
+      RouteTableId: !Ref PrivateRouteTableC
+
+  PrivateSubnetDRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetD
+      RouteTableId: !Ref PrivateRouteTableD
+
+Outputs:
+  Vpc:
+    Value: !Ref Vpc
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-Vpc
+  PublicSubnetA:
+    Value: !Ref PublicSubnetA
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-PublicSubnetA
+  PublicSubnetC:
+    Value: !Ref PublicSubnetC
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-PublicSubnetC
+  PublicSubnetD:
+    Value: !Ref PublicSubnetD
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-PublicSubnetD
+  PrivateSubnetA:
+    Value: !Ref PrivateSubnetA
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-PrivateSubnetA
+  PrivateSubnetC:
+    Value: !Ref PrivateSubnetC
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-PrivateSubnetC
+  PrivateSubnetD:
+    Value: !Ref PrivateSubnetD
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-PrivateSubnetD

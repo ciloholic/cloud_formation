@@ -30,10 +30,10 @@ $ laws cloudformation validate-template --template-body file://template/sample.y
 
 ```
 $ laws cloudformation create-stack \
-  --stack-name sample \
-  --region ap-northeast-1 \
-  --template-body file://template/sample.yaml \
-  --parameters ParameterKey=ServiceName,ParameterValue=sample
+--stack-name sample \
+--region ap-northeast-1 \
+--template-body file://template/sample.yaml \
+--parameters ParameterKey=ServiceName,ParameterValue=sample
 ```
 
 ```
@@ -59,17 +59,11 @@ $ laws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE
 
 ```
 $ laws cloudformation create-stack \
-  --stack-name sample \
-  --region ap-northeast-1 \
-  --template-body file://template/rds.yaml \
-  --parameters ParameterKey=ServiceName,ParameterValue=sample \
-  ParameterKey=VpcId,ParameterValue=vpc-xxx \
-  ParameterKey=DBName,ParameterValue=sample \
-  ParameterKey=DBMasterUsername,ParameterValue=xxx \
-  ParameterKey=DBMasterUserPassword,ParameterValue=xxx \
-  ParameterKey=DBMultiAZ,ParameterValue=false \
-  ParameterKey=DBSubnetA,ParameterValue=subnet-xxx \
-  ParameterKey=DBSubnetC,ParameterValue=subnet-xxx \
-  ParameterKey=DBSubnetD,ParameterValue=subnet-xxx \
-  ParameterKey=StorageEncrypted,ParameterValue=false
+--stack-name sample \
+--region ap-northeast-1 \
+--template-body file://template/sample.yaml \
+--parameters ParameterKey=ServiceName,ParameterValue=sample \
+ParameterKey=Environment,ParameterValue=prd \
+ParameterKey=MasterUsername,ParameterValue=admin \
+ParameterKey=MasterUserPassword,ParameterValue=password
 ```
