@@ -16,11 +16,6 @@ Parameters:
     Type: String
     NoEcho: true
 
-Mappings:
-  Rds:
-    Properties:
-      DBInstanceClass: db.t2.micro
-
 Resources:
   # rds
   Rds:
@@ -31,23 +26,23 @@ Resources:
       AutoMinorVersionUpgrade: true
       BackupRetentionPeriod: 7
       CopyTagsToSnapshot: true
-      DBInstanceClass: !FindInMap [Rds, Properties, DBInstanceClass]
+      DBInstanceClass: db.t2.micro
       DBInstanceIdentifier: !Sub ${ServiceName}-${Environment}-postgres
       DBName: !Sub ${ServiceName}_${Environment}
       DBParameterGroupName: !Ref RdsParameterGroup
       DBSubnetGroupName: !Ref RdsSubnetGroup
-      DeletionProtection: true
+      DeletionProtection: false # true
       EnablePerformanceInsights: true
       Engine: postgres
       EngineVersion: '11.7'
       MasterUsername: !Ref MasterUsername
       MasterUserPassword: !Ref MasterUserPassword
-      MultiAZ: false
+      MultiAZ: false # true
       PerformanceInsightsRetentionPeriod: 7
       PreferredBackupWindow: 15:00-15:30
       PreferredMaintenanceWindow: sun:16:00-sun:16:30
       StorageType: gp2
-      StorageEncrypted: false
+      StorageEncrypted: false # true
       VPCSecurityGroups:
       - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-RdsSecurityGroup
 

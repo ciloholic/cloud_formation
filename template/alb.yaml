@@ -1,0 +1,192 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Application
+
+Parameters:
+  ServiceName:
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues: 
+      - prd
+      - dev
+      - stg
+
+Mappings:
+  S3Config:
+    us-east-1:
+      Principal: 127311923021
+    us-east-2:
+      Principal: 033677994240
+    us-west-1:
+      Principal: 027434742980
+    us-west-2:
+      Principal: 797873946194
+    ca-central-1:
+      Principal: 985666609251
+    eu-central-1:
+      Principal: 054676820928
+    eu-west-1:
+      Principal: 156460612806
+    eu-west-2:
+      Principal: 652711504416
+    eu-west-3:
+      Principal: 009996457667
+    eu-north-1:
+      Principal: 897822967062
+    ap-east-1:
+      Principal: 754344448648
+    ap-northeast-1:
+      Principal: 582318560864
+    ap-northeast-2:
+      Principal: 600734575887
+    ap-northeast-3:
+      Principal: 383597477331
+    ap-southeast-1:
+      Principal: 114774131450
+    ap-southeast-2:
+      Principal: 783225319266
+    ap-south-1:
+      Principal: 718504428378
+    sa-east-1:
+      Principal: 507241528517
+    us-gov-west-1:
+      Principal: 048591011584
+    us-gov-east-1:
+      Principal: 190560391635
+    cn-north-1:
+      Principal: 638102146993
+    cn-northwest-1:
+      Principal: 037604701340
+
+Resources:
+  # alb access logs
+  S3BucketLogsPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3BucketLogs
+      PolicyDocument:
+        Id: AlblogsBucketPolicy
+        Statement:
+          - Sid: AwsLogDeliveryWrite
+            Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${S3BucketLogs}/*
+            Principal:
+              Service: delivery.logs.amazonaws.com
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+          - Sid: AWSLogDeliveryAclCheck
+            Effect: Allow
+            Action:
+              - s3:GetBucketAcl
+            Resource:
+              - !Sub arn:aws:s3:::${S3BucketLogs}
+            Principal:
+              Service: delivery.logs.amazonaws.com
+          - Sid: AddPerm
+            Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${S3BucketLogs}/*
+            Principal:
+              AWS: !FindInMap
+                - S3Config
+                - !Ref AWS::Region
+                - Principal
+
+  S3BucketLogs:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub ${ServiceName}-${Environment}-${AWS::Region}-alb-logs
+      LifecycleConfiguration:
+        Rules:
+        - Id: AutoDelete
+          Status: Enabled
+          ExpirationInDays: 14
+        - Id: NoncurrentVersionExpiration
+          Status: Enabled
+          NoncurrentVersionExpirationInDays: 7
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+  # alb
+  Alb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn: S3BucketLogsPolicy
+    DeletionPolicy: Delete
+    Properties:
+      IpAddressType: ipv4
+      LoadBalancerAttributes:
+      - Key: access_logs.s3.enabled
+        Value: 'true'
+      - Key: access_logs.s3.bucket
+        Value: !Ref S3BucketLogs
+      - Key: access_logs.s3.prefix
+        Value: !Sub alb/${AWS::StackName}
+      - Key: deletion_protection.enabled
+        Value: 'false'
+      - Key: idle_timeout.timeout_seconds
+        Value: '120'
+      - Key: routing.http2.enabled
+        Value: 'true'
+      Name: !Sub ${ServiceName}-${Environment}-alb
+      Scheme: internet-facing
+      SecurityGroups:
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-AlbSecurityGroup
+      Subnets:
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-PublicSubnetA
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-PublicSubnetC
+      - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-PublicSubnetD
+      Type: application
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-alb
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: Alb
+    DeletionPolicy: Delete
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: /
+      HealthCheckPort: traffic-port
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      Matcher:
+        HttpCode: '200'
+      Name: !Sub ${ServiceName}-${Environment}-target-group
+      Port: 80
+      Protocol: HTTP
+      TargetGroupAttributes:
+      - Key: deregistration_delay.timeout_seconds
+        Value: '300'
+      Targets:
+      - Id: EC2Instance # fargate
+      TargetType: instance
+      UnhealthyThresholdCount: 3
+      VpcId:
+        Fn::ImportValue: !Sub ${ServiceName}-${Environment}-Vpc
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    DependsOn: TargetGroup
+    DeletionPolicy: Delete
+    Properties:
+      DefaultActions:
+      - Order: 1
+        TargetGroupArn: TargetGroup
+        Type: forward
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
