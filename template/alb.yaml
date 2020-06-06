@@ -187,6 +187,6 @@ Resources:
       - Order: 1
         TargetGroupArn: TargetGroup
         Type: forward
-      LoadBalancerArn: !Ref LoadBalancer
+      LoadBalancerArn: !Ref Alb
       Port: 80
       Protocol: HTTP

@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Application Frontend
+
+Parameters:
+  ServiceName:
+    Type: String
+  Environment:
+    Type: String
+    AllowedValues: 
+      - prd
+      - dev
+      - stg
+
+Resources:
+  # s3
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    # DeletionPolicy: Retain
+    # UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub ${ServiceName}-${Environment}-frontend
+
+  # s3 bucket policy
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Allow
+            Resource: !Sub arn:aws:s3:::${S3Bucket}/*
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+
+  # cloudfront distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+        - Id: S3Origin
+          DomainName: !GetAtt S3Bucket.DomainName
+          S3OriginConfig:
+            OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
+        Enabled: true
+        DefaultRootObject: index.html
+        Comment: !Sub ${ServiceName}-${Environment}
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          AllowedMethods:
+          - GET
+          - HEAD
+          CachedMethods:
+          - GET
+          - HEAD
+          DefaultTTL: 86400
+          MaxTTL: 86400
+          MinTTL: 86400
+          Compress: true
+          ForwardedValues:
+            Cookies:
+              Forward: none
+            QueryString: false
+          ViewerProtocolPolicy: redirect-to-https
+
+  # cloudfront origin access identity
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub access-identity-${S3Bucket}
+
+Outputs:
+  BucketName:
+    Value: !Ref S3Bucket
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-BucketName
+  DistributionId:
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-DistributionId
+  DomainName:
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-DomainName
+  CloudFrontUrl:
+    Value: !Join [ '', [ 'https://', !GetAtt [ CloudFrontDistribution, DomainName ]]]
+    Export:
+      Name: !Sub ${ServiceName}-${Environment}-CloudFrontUrl
