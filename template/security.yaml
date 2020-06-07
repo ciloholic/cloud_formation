@@ -21,17 +21,17 @@ Resources:
       GroupName: !Sub ${ServiceName}-${Environment}-alb
       GroupDescription: !Sub ${ServiceName}-${Environment}-alb
       SecurityGroupIngress:
-      - CidrIp: 0.0.0.0/0
-        IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-      - CidrIp: 0.0.0.0/0
-        IpProtocol: tcp
-        FromPort: 443
-        ToPort: 443
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
       Tags:
-      - Key: Name
-        Value: !Sub ${ServiceName}-${Environment}-alb
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-alb
 
   FargateSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -41,13 +41,13 @@ Resources:
       GroupName: !Sub ${ServiceName}-${Environment}-fargate
       GroupDescription: !Sub ${ServiceName}-${Environment}-fargate
       SecurityGroupIngress:
-      - SourceSecurityGroupId: !Ref AlbSecurityGroup
-        IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
+        - SourceSecurityGroupId: !Ref AlbSecurityGroup
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
       Tags:
-      - Key: Name
-        Value: !Sub ${ServiceName}-${Environment}-fargate
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-fargate
 
   RdsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -57,13 +57,13 @@ Resources:
       GroupName: !Sub ${ServiceName}-${Environment}-rds
       GroupDescription: !Sub ${ServiceName}-${Environment}-rds
       SecurityGroupIngress:
-      - SourceSecurityGroupId: !Ref FargateSecurityGroup
-        IpProtocol: tcp
-        FromPort: 5432
-        ToPort: 5432
+        - SourceSecurityGroupId: !Ref FargateSecurityGroup
+          IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
       Tags:
-      - Key: Name
-        Value: !Sub ${ServiceName}-${Environment}-rds
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-rds
 
   RedisSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -73,13 +73,13 @@ Resources:
       GroupName: !Sub ${ServiceName}-${Environment}-redis
       GroupDescription: !Sub ${ServiceName}-${Environment}-redis
       SecurityGroupIngress:
-      - SourceSecurityGroupId: !Ref FargateSecurityGroup
-        IpProtocol: tcp
-        FromPort: 6379
-        ToPort: 6379
+        - SourceSecurityGroupId: !Ref FargateSecurityGroup
+          IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
       Tags:
-      - Key: Name
-        Value: !Sub ${ServiceName}-${Environment}-redis
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-redis
 
 Outputs:
   AlbSecurityGroup:

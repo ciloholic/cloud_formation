@@ -12,24 +12,60 @@ Parameters:
       - stg
 
 Resources:
-  # s3
-  S3Bucket:
+  # cloudfront logs bucket
+  CloudFrontLogsBucket:
     Type: AWS::S3::Bucket
-    # DeletionPolicy: Retain
-    # UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete
     Properties:
-      BucketName: !Sub ${ServiceName}-${Environment}-frontend
+      BucketName: !Sub ${ServiceName}-${Environment}-${AWS::Region}-cloudfront-logs
+      LifecycleConfiguration:
+        Rules:
+          - Id: AutoDelete
+            Status: Enabled
+            ExpirationInDays: 14
+          - Id: NoncurrentVersionExpiration
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 7
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
 
-  # s3 bucket policy
-  S3BucketPolicy:
+  CloudFrontLogsBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref S3Bucket
+      Bucket: !Ref CloudFrontLogsBucket
+      PolicyDocument:
+        Id: CloudFrontLogsBucketPolicy
+        Statement:
+          - Sid: AddCannedAcl
+            Effect: Allow
+            Action:
+              - s3:GetBucketAcl
+              - s3:PutBucketAcl
+            Resource:
+              - !Sub arn:aws:s3:::${CloudFrontLogsBucket}
+            Principal:
+              CanonicalUser: c4c1ede66af53448b93c283ce9448c4ba468c9432aa01d700d3878632f77d2d0
+
+  # frontend assets bucket
+  FrontendAssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${ServiceName}-${Environment}-frontend-assets
+
+  FrontendAssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendAssetsBucket
       PolicyDocument:
         Statement:
           - Action: s3:GetObject
             Effect: Allow
-            Resource: !Sub arn:aws:s3:::${S3Bucket}/*
+            Resource: !Sub arn:aws:s3:::${FrontendAssetsBucket}/*
             Principal:
               CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
 
@@ -39,13 +75,17 @@ Resources:
     Properties:
       DistributionConfig:
         Origins:
-        - Id: S3Origin
-          DomainName: !GetAtt S3Bucket.DomainName
-          S3OriginConfig:
-            OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
+          - Id: S3Origin
+            DomainName: !GetAtt FrontendAssetsBucket.DomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
+        PriceClass: PriceClass_200
         Enabled: true
         DefaultRootObject: index.html
         Comment: !Sub ${ServiceName}-${Environment}
+        Logging:
+          Bucket: !GetAtt CloudFrontLogsBucket.DomainName
+          Prefix: !Sub cloudfront/${AWS::StackName}
         DefaultCacheBehavior:
           TargetOriginId: S3Origin
           AllowedMethods:
@@ -54,26 +94,28 @@ Resources:
           CachedMethods:
           - GET
           - HEAD
-          DefaultTTL: 86400
-          MaxTTL: 86400
-          MinTTL: 86400
+          DefaultTTL: 0
+          MaxTTL: 0
+          MinTTL: 0
           Compress: true
           ForwardedValues:
             Cookies:
               Forward: none
             QueryString: false
           ViewerProtocolPolicy: redirect-to-https
+      Tags:
+        - Key: Name
+          Value: !Sub ${ServiceName}-${Environment}-cloudfront
 
-  # cloudfront origin access identity
   CloudFrontOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties:
       CloudFrontOriginAccessIdentityConfig:
-        Comment: !Sub access-identity-${S3Bucket}
+        Comment: !Sub access-identity-${FrontendAssetsBucket}
 
 Outputs:
   BucketName:
-    Value: !Ref S3Bucket
+    Value: !Ref FrontendAssetsBucket
     Export:
       Name: !Sub ${ServiceName}-${Environment}-BucketName
   DistributionId:
@@ -84,7 +126,3 @@ Outputs:
     Value: !GetAtt CloudFrontDistribution.DomainName
     Export:
       Name: !Sub ${ServiceName}-${Environment}-DomainName
-  CloudFrontUrl:
-    Value: !Join [ '', [ 'https://', !GetAtt [ CloudFrontDistribution, DomainName ]]]
-    Export:
-      Name: !Sub ${ServiceName}-${Environment}-CloudFrontUrl
