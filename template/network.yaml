@@ -6,7 +6,7 @@ Parameters:
     Type: String
   Environment:
     Type: String
-    AllowedValues: 
+    AllowedValues:
       - prd
       - dev
       - stg
