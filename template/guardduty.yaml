@@ -52,8 +52,7 @@ Resources:
           - Sid: AwsEvents
             Effect: Allow
             Principal:
-              Service:
-                - events.amazonaws.com
+              Service: events.amazonaws.com
             Action: sns:Publish
             Resource: !Ref SnsTopic
       Topics:
