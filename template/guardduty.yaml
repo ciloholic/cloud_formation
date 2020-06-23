@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: GuardDuty
+
+Parameters:
+  email:
+    Type: String
+    NoEcho: true
+
+Resources:
+  GuardDuty:
+    Type: AWS::GuardDuty::Detector
+    Properties:
+      Enable: true
+
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: GuardDutyTopic
+
+  SnsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !Ref email
+      Protocol: email
+      TopicArn: !Ref SnsTopic
+
+  SnsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Id: DefaultPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: SnsActions
+            Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - SNS:GetTopicAttributes
+              - SNS:SetTopicAttributes
+              - SNS:AddPermission
+              - SNS:RemovePermission
+              - SNS:DeleteTopic
+              - SNS:Subscribe
+              - SNS:ListSubscriptionsByTopic
+              - SNS:Publish
+              - SNS:Receive
+            Resource: !Ref SnsTopic
+            Condition:
+              StringEquals:
+                AWS:SourceOwner: !Ref AWS::AccountId
+          - Sid: AwsEvents
+            Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref SnsTopic
+      Topics:
+        - !Ref SnsTopic
+
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: AlertGuardDutyFindings
+      EventPattern: >-
+        {
+          "source": [
+            "aws.guardduty"
+          ],
+          "detail-type": [
+            "GuardDuty Finding"
+          ]
+        }
+      Targets:
+      - Arn: !Ref SnsTopic
+        Id: AlertGuardDutyFindings
