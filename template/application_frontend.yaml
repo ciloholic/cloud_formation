@@ -12,7 +12,6 @@ Parameters:
       - stg
 
 Resources:
-  # cloudfront logs bucket
   CloudFrontLogsBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
@@ -51,7 +50,6 @@ Resources:
             Principal:
               CanonicalUser: c4c1ede66af53448b93c283ce9448c4ba468c9432aa01d700d3878632f77d2d0
 
-  # frontend assets bucket
   FrontendAssetsBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -69,7 +67,6 @@ Resources:
             Principal:
               CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
 
-  # cloudfront distribution
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -89,11 +86,11 @@ Resources:
         DefaultCacheBehavior:
           TargetOriginId: S3Origin
           AllowedMethods:
-          - GET
-          - HEAD
+            - GET
+            - HEAD
           CachedMethods:
-          - GET
-          - HEAD
+            - GET
+            - HEAD
           DefaultTTL: 0
           MaxTTL: 0
           MinTTL: 0

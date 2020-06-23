@@ -29,7 +29,6 @@ Mappings:
       PrivateD: 10.0.30.0/24
 
 Resources:
-  # vpc
   Vpc:
     Type: AWS::EC2::VPC
     Properties:
@@ -38,7 +37,6 @@ Resources:
         - Key: Name
           Value: !Sub ${ServiceName}-${Environment}-vpc
 
-  # internet gateway
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
@@ -52,7 +50,6 @@ Resources:
       VpcId: !Ref Vpc
       InternetGatewayId: !Ref InternetGateway
 
-  # route table
   PublicRouteTableA:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -101,7 +98,6 @@ Resources:
         - Key: Name
           Value: !Sub ${ServiceName}-${Environment}-private-route-table-d
 
-  # route
   PublicRouteA:
     Type: AWS::EC2::Route
     Properties:
@@ -123,7 +119,6 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
 
-  # subnet
   PublicSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -184,7 +179,6 @@ Resources:
         - Key: Name
           Value: !Sub ${ServiceName}-${Environment}-private-subnet-d
 
-  # route table association
   PublicSubnetARouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:

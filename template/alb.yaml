@@ -6,7 +6,7 @@ Parameters:
     Type: String
   Environment:
     Type: String
-    AllowedValues: 
+    AllowedValues:
       - prd
       - dev
       - stg
@@ -59,7 +59,6 @@ Mappings:
       Principal: 037604701340
 
 Resources:
-  # alb logs bucket
   AlbLogsBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Delete
@@ -119,7 +118,6 @@ Resources:
                 - !Ref AWS::Region
                 - Principal
 
-  # alb
   Alb:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     DependsOn: AlbLogsBucketPolicy

@@ -17,7 +17,6 @@ Parameters:
     NoEcho: true
 
 Resources:
-  # rds
   Rds:
     Type: AWS::RDS::DBInstance
     Properties:
@@ -46,7 +45,6 @@ Resources:
       VPCSecurityGroups:
       - Fn::ImportValue: !Sub ${ServiceName}-${Environment}-RdsSecurityGroup
 
-  # subnet group
   RdsSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
@@ -60,13 +58,12 @@ Resources:
       - Key: Name
         Value: !Sub ${ServiceName}-${Environment}-subnet-group
 
-  # parameter group
   RdsParameterGroup:
     Type: AWS::RDS::DBParameterGroup
     Properties:
       Description: !Sub ${ServiceName}-${Environment}-param-group
       Family: postgres11
-      Parameters: 
+      Parameters:
         log_min_duration_statement: '5000'
         log_statement: all
         rds.log_retention_period: '10080'
