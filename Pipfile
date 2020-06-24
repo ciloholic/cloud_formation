@@ -12,4 +12,4 @@ cfn-lint = "*"
 python_version = "3.8"
 
 [scripts]
-lint = "cfn-lint template/*.yaml"
+lint = "cfn-lint template/**/*.yaml"
