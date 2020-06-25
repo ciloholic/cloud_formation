@@ -29,7 +29,7 @@ Resources:
       VersioningConfiguration:
         Status: Enabled
 
-  CloudTrailBucketPolicy:
+  CloudTrailLogsBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !Ref CloudTrailLogsBucket
