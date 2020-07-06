@@ -14,22 +14,22 @@ $ pipenv run lint
 
 ## Alias aws-cli
 
-You can run aws-cli in docker with the alias `laws`.
+You can run aws-cli in docker with the alias `daws`.
 
 ```
-$ alias laws='docker run --rm -it -v `pwd`/.aws:/root/.aws -v `pwd`:/aws amazon/aws-cli'
+$ alias daws='docker run --rm -it -v `pwd`/.aws:/root/.aws -v `pwd`:/aws amazon/aws-cli'
 ```
 
 ## Cloud Formation Validation
 
 ```
-$ laws cloudformation validate-template --template-body file://template/sample.yaml
+$ daws cloudformation validate-template --template-body file://template/sample.yaml
 ```
 
 ## Cloud Formation Command Lines
 
 ```
-$ laws cloudformation create-stack \
+$ daws cloudformation create-stack \
 --stack-name sample \
 --region ap-northeast-1 \
 --template-body file://template/sample.yaml \
@@ -37,28 +37,28 @@ $ laws cloudformation create-stack \
 ```
 
 ```
-$ laws cloudformation update-stack \
+$ daws cloudformation update-stack \
 --stack-name sample \
 --template-body file://template/sample.yaml \
 --parameters ServiceName=sample
 ```
 
 ```
-$ laws cloudformation cancel-update-stack --stack-name sample
+$ daws cloudformation cancel-update-stack --stack-name sample
 ```
 
 ```
-$ laws cloudformation delete-stack --stack-name sample
+$ daws cloudformation delete-stack --stack-name sample
 ```
 
 ```
-$ laws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE
+$ daws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE
 ```
 
 ### Relational Database Service
 
 ```
-$ laws cloudformation create-stack \
+$ daws cloudformation create-stack \
 --stack-name sample \
 --region ap-northeast-1 \
 --template-body file://template/sample.yaml \
